@@ -2,6 +2,10 @@ import pandas as pd
 import requests 
 import os 
 import json
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import plotly.express as px
+import numpy as np 
 
 
 """
@@ -68,6 +72,12 @@ def save_response(response, to_file):
 		for chunk in resp.iter_content(chunk_size=128):
 			f.write(chunk)
 
+dataframes = {}
+
+def save_data(name, rows, columns):
+	df = pd.DataFrame(data=rows, columns=columns)
+	dataframes[name] = df
+
 
 
 save_data_file_name = "mars_data.json"
@@ -90,6 +100,7 @@ resp = requests.get(url=url, params=params)
 #Convert To JSON Format
 data = resp.json()
 
+
 #Was Data Retrieval Successful?
 successful_resp = successful_response(resp)
 
@@ -97,15 +108,23 @@ save_response(resp, save_data_file_path)
 
 #Create A Dataframe
 
-#df = pd.read_json(save_data_file_path)
+#DB: Sols
+sols_per_week = 7
+sol_ids = range(0,sols_per_week)
+days_into_year = data["sol_keys"]
 
-mars_dfs = {}
+db_Sols_r = zip(sol_ids, days_into_year)
+db_Sols_c = ["sol_id", "days_into_year"]
 
-sols = [str(n) for n in data["sol_keys"]]
+save_data("SOLS", db_Sols_r, db_Sols_c)
 
 #Atmospheric Temperature
+
 atm_temp = [data[sol]["AT"] for sol in sols]
 atm_temp_df = pd.DataFrame(atm_temp)
+
+atm_temp_df.insert(0, "sol_id", sols)
+
 mars_dfs["AT"] = atm_temp_df
 
 #Horizontal Wind Speed
@@ -123,7 +142,7 @@ mars_dfs["PRE"] = pre_df
 
 wd_pt_cols = ["compass_degrees", "compass_point", "compass_right", "compass_up", "ct"]
 
-wd_options = [str(x) for x in data[sol]["WD"]]
+wd_options = [str(x) for x in data[sol]["WD"] if x is not "most_common"]
 
 
 #WD: Most Common
@@ -133,7 +152,7 @@ df_wd_most_common = pd.DataFrame(wd_most_common)
 mars_dfs["WD"] = {}
 mars_dfs["WD"]["most_common"] = df_wd_most_common
 
-#WD: 
+#WD: Rose Axes
 rose_axes_dict = {}
 axis_dict = {}
 
@@ -145,31 +164,16 @@ for sol in sols:
 			axis_data["ax"] = axis
 			sol_list.append(axis_data)
 		except KeyError:
-			print ("Null")
+			continue
 
 	rose_axes_dict[sol] = pd.DataFrame(sol_list)
 mars_dfs["WD"] = rose_axes_dict
 
-print mars_dfs["WD"]
+AT = mars_dfs["AT"]
+
+print AT
 
 
-
-"""
-wd_compass_pt_no = [[data[sol]["WD"][str(wind_rose_num)] for wind_rose_num in range(1,16)] for sol in sols]
-
-print wd_compass_pt_no
-
-wd_most_common = [data[sol]["WD"]["most_common"] for sol in sols]
-
-wd_dict = {"compass_pt_no" : pd.DataFrame(wd_compass_pt_no),
-		"most_common" : d.DataFrame(wd_most_common) }
-
-
-print wd_df
-
-
-mars_dfs["WD"] = wd_df
-"""
 
 
 
