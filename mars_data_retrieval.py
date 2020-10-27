@@ -66,25 +66,22 @@ Time Of First Datum: First_UTC (UTC; YYYY-MM-DDTHH:MM:SSZ)
 Time Of Last Datum: Last_UTC (UTC; YYYY-MM-DDTHH:MM:SSZ)
 """
 
-
-dataframes = {}
-
-def save_data(name, rows, columns):
-	df = pd.DataFrame(data=rows, columns=columns)
-	dataframes[name] = df
-
-sets = {}
-set_ids = ["AT", "HWS", "WD", "PRE"]
-
 class Datasets(enum.Enum):
 	Temp = 0
 	W_Speed = 1
 	W_Dir = 2
 	Pressure = 3
 
+dataframes = {}
+sets = {}
+set_ids = ["AT", "HWS", "WD", "PRE"]
+
 for i,ele in enumerate(set_ids):
 	sets[Datasets(i)] = ele
 
+def save_data(name, rows, columns):
+	df = pd.DataFrame(data=rows, columns=columns)
+	dataframes[name] = df
 
 def get_set_id(ds):
 	return sets[ds]
@@ -93,12 +90,14 @@ def get_set(sol, ds):
 	set_id = get_set_id(ds)
 	return data[sol][set_id]
 
+def get_df(df_id):
+	return dataframes[df_id]
+
 def add_sol_id(ds, sol):
 	ds["sol_id"] = sol
 
 def add_ordinal_id(ds, ordinal):
 	ds["ordinal"] = ordinal
-
 
 def order_row(ds, col_order):
 	final_set = []
@@ -106,8 +105,6 @@ def order_row(ds, col_order):
 		nxt_col = ds[col]
 		final_set.append(nxt_col)
 	return final_set
-
-
 
 def successful_response(response):
 	return (response.status_code is 200)
@@ -117,6 +114,25 @@ def save_response(response, to_file):
 		for chunk in resp.iter_content(chunk_size=128):
 			f.write(chunk)
 
+def get_sol_day(sol_id):
+	return dataframes["SOLS"]
+
+def organise_std_data(ds_id, sol_ids):
+	db_rows = []
+	db_cols = ["sol_id", "av", "mn", "mx", "ct"]
+
+	for sol in sol_ids:
+		day_of_year = days_into_year[sol]
+
+		#Retrieve & Customise Row
+		ds = get_set(day_of_year, ds_id)
+		add_sol_id(ds, sol)
+
+		#Ensure row is in the correct order
+		ordered_row = order_row(ds, db_cols)
+		db_rows.append(ordered_row)
+
+	return db_rows, db_cols
 
 save_data_file_name = "mars_data.json"
 save_data_file_path = "%s/%s" % (os.getcwd(), save_data_file_name)
@@ -142,8 +158,6 @@ data = resp.json()
 successful_resp = successful_response(resp)
 save_response(resp, save_data_file_path)
 
-#Create A Dataframe
-
 #DB: Sols
 sols_per_week = 7
 sol_ids = range(0,sols_per_week)
@@ -154,42 +168,25 @@ db_Sols_c = ["sol_id", "days_into_year"]
 
 save_data("SOLS", db_Sols_r, db_Sols_c)
 
-def get_sol_day(sol_id):
-	return dataframes["SOLS"]
-
-def organise_std_data(ds_id):
-	db_rows = []
-	db_cols = ["sol_id", "av", "mn", "mx", "ct"]
-
-	for sol in sol_ids:
-		day_of_year = days_into_year[sol]
-
-		#Retrieve & Customise Row
-		ds = get_set(day_of_year, ds_id)
-		add_sol_id(ds, sol)
-
-		#Ensure row is in the correct order
-		ordered_row = order_row(ds, db_cols)
-		db_rows.append(ordered_row)
-
-	return db_rows, db_cols
-
 #Atmospheric Temperature
-atm_temp_rows, atm_temp_cols = organise_std_data(Datasets.Temp)
+atm_temp_rows, atm_temp_cols = organise_std_data(Datasets.Temp, sol_ids)
 save_data("TEMP", atm_temp_rows, atm_temp_cols)
 
 #Wind Speed
-wspeed_rows, wspeed_cols = organise_std_data(Datasets.W_Speed)
+wspeed_rows, wspeed_cols = organise_std_data(Datasets.W_Speed, sol_ids)
 save_data("WSPEED", wspeed_rows, wspeed_cols)
 
 #Atmospheric Pressure
-pre_rows, pre_cols = organise_std_data(Datasets.Pressure)
+pre_rows, pre_cols = organise_std_data(Datasets.Pressure, sol_ids)
 save_data("PRESSURE", pre_rows, pre_cols)
 
 #Wind Direction: Ordinals
 #Relation Key: {sol_id, ordinal}
 wd_rows = []
-wd_cols = ["sol_id", "ordinal", "compass_point", "compass_degrees", "compass_right", "compass_up", "ct"]
+
+wd_cols = ["sol_id", "ordinal", 
+"compass_point", "compass_degrees", 
+"compass_right", "compass_up", "ct"]
 
 for sol in sol_ids:
 	day_of_year = days_into_year[sol]
@@ -212,7 +209,10 @@ save_data("WIND_DIRECTION", wd_rows, wd_cols)
 
 #Wind Direction: Most Common
 wd_com_rows = []
-wd_com_cols = ["sol_id", "compass_point", "compass_degrees", "compass_right", "compass_up", "ct"]
+wd_com_cols = ["sol_id", "compass_point", 
+"compass_degrees", "compass_right", "compass_up", "ct"]
+
+#TODO: CLEANING
 
 for sol in sol_ids:
 	day_of_year = days_into_year[sol]
@@ -224,6 +224,112 @@ for sol in sol_ids:
 	wd_com_rows.append(ordered_row)
 
 save_data("WIND_DIR_MOST_COMMON", wd_com_rows, wd_com_cols)
+
+#Plotly time!
+
+#Atmospheric Temperature Graph 
+sol_key = "sol_id"
+min_key = "mn"
+max_key = "mx"
+avg_key = "av"
+atmospheric_temp_df_key = "TEMP"
+sols_df_key = "SOLS"
+
+temp_graph_title = "Avg-Min-Max Mars Atmospheric Temperature Graph"
+
+min_temp_colour = "darkblue"
+avg_temp_colour = "darkorange"
+max_temp_colour = "orangered"
+
+line_width = 2
+line_colour = "black"
+
+def plot_temperatures(sols, temp, colour, line_size):
+	return go.Scatter(x=sols,y=temp,mode="markers",
+		showlegend=False,marker=dict(color=colour,size=line_size))
+
+temp_set = get_df(atmospheric_temp_df_key)
+
+mins = temp_set[min_key]
+maxs = temp_set[max_key]
+avgs = temp_set[avg_key]
+
+sols = get_df(sols_df_key)["days_into_year"]
+
+temp_graph = go.Figure()
+
+plot_min = plot_temperatures(sols, mins, min_temp_colour, 10)
+temp_graph.add_trace(plot_min)
+
+plot_avg = plot_temperatures(sols, avgs, avg_temp_colour, 20)
+temp_graph.add_trace(plot_avg)
+
+plot_max = plot_temperatures(sols, maxs, max_temp_colour, 10)
+temp_graph.add_trace(plot_max)
+
+for i,row in temp_set.iterrows():
+	temp_graph.add_shape(
+		dict(
+			type="line",
+			x0=row[sol_key],
+			x1=row[sol_key],
+			y0=row[min_key],
+			y1=row[max_key],
+			line=dict(
+				color=line_colour,
+				width=line_width)
+			),
+		layer="below"
+		)
+
+temp_graph.update_layout(title=temp_graph_title, xaxis_showgrid=False,yaxis_showgrid=False,
+	xaxis_type="category")
+
+temp_graph.show()
+
+"""
+pressure_set = get_df("PRESSURE")
+
+x = pressure_set["sol_id"]
+y = pressure_set["av"]
+
+fig = px.bar(x=x,y=y, labels={ 'x' : "Sol", 'y' : "Pressure" }, range_y=[745,755])
+fig.show()
+"""
+
+"""
+wspeed_set = get_df("WSPEED")
+
+x = wspeed_set["sol_id"]
+y = wspeed_set["av"]
+
+fig = px.bar(x=x,y=y, labels={ 'x' : "Sol", 'y' : "Wind Speed" })
+fig.show()
+"""
+
+"""
+temp_set = get_df("TEMP")
+pressure_set = get_df("PRESSURE")
+
+x = temp_set["av"]
+y = pressure_set["av"]
+
+fig = px.line(x=x, y=y, title="Temperature Compared With Atmospheric Pressure")
+fig.show()
+"""
+
+"""
+wdir_set = get_df("WIND_DIRECTION")
+
+first_sol = wdir_set.loc[wdir_set["sol_id"] == 0]
+first_sol = first_sol[["compass_point", "ct"]]
+
+order = { "compass_point" : ["N","NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"] }
+
+fig = px.bar_polar(first_sol, theta="compass_point", r="ct", category_orders=order, template="seaborn")
+fig.show()
+"""
+
 
 
 
