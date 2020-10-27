@@ -235,18 +235,30 @@ avg_key = "av"
 atmospheric_temp_df_key = "TEMP"
 sols_df_key = "SOLS"
 
-temp_graph_title = "Avg-Min-Max Mars Atmospheric Temperature Graph"
+temp_graph_title = "Avg-Min-Max Mars Atmospheric Temperature"
 
 min_temp_colour = "darkblue"
 avg_temp_colour = "darkorange"
 max_temp_colour = "orangered"
 
+min_temp_title = "Minimum Temperature"
+avg_temp_title = "Average Temperature"
+max_temp_title = "Maximum Temperature"
+
+xaxis_title = "Sol (Number Of Days Into Mars Year)"
+yaxis_title = "Temperature (Degrees Celsius)"
+
+min_temp_size = 10
+avg_temp_size = 20
+max_temp_size = 10
+
 line_width = 2
 line_colour = "black"
 
-def plot_temperatures(sols, temp, colour, line_size):
+def plot_temperatures(sols, temp, colour, line_size, name):
 	return go.Scatter(x=sols,y=temp,mode="markers",
-		showlegend=False,marker=dict(color=colour,size=line_size))
+		showlegend=True,marker=dict(color=colour,size=line_size),
+		name=name)
 
 temp_set = get_df(atmospheric_temp_df_key)
 
@@ -258,13 +270,13 @@ sols = get_df(sols_df_key)["days_into_year"]
 
 temp_graph = go.Figure()
 
-plot_min = plot_temperatures(sols, mins, min_temp_colour, 10)
+plot_min = plot_temperatures(sols, mins, min_temp_colour, min_temp_size, min_temp_title)
 temp_graph.add_trace(plot_min)
 
-plot_avg = plot_temperatures(sols, avgs, avg_temp_colour, 20)
+plot_avg = plot_temperatures(sols, avgs, avg_temp_colour, avg_temp_size, avg_temp_title)
 temp_graph.add_trace(plot_avg)
 
-plot_max = plot_temperatures(sols, maxs, max_temp_colour, 10)
+plot_max = plot_temperatures(sols, maxs, max_temp_colour, max_temp_size, max_temp_title)
 temp_graph.add_trace(plot_max)
 
 for i,row in temp_set.iterrows():
@@ -282,7 +294,11 @@ for i,row in temp_set.iterrows():
 		layer="below"
 		)
 
-temp_graph.update_layout(title=temp_graph_title, xaxis_showgrid=False,yaxis_showgrid=False,
+temp_graph.update_layout(title=temp_graph_title, 
+	xaxis_showgrid=False, 
+	yaxis_showgrid=False,
+	xaxis_title=xaxis_title,
+	yaxis_title=yaxis_title,
 	xaxis_type="category")
 
 temp_graph.show()
