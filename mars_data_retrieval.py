@@ -237,102 +237,175 @@ sols_df_key = "SOLS"
 
 temp_graph_title = "Avg-Min-Max Mars Atmospheric Temperature"
 
-min_temp_colour = "darkblue"
-avg_temp_colour = "darkorange"
-max_temp_colour = "orangered"
-
-min_temp_title = "Minimum Temperature"
-avg_temp_title = "Average Temperature"
-max_temp_title = "Maximum Temperature"
-
-xaxis_title = "Sol (Number Of Days Into Mars Year)"
+xaxis_title = "Sol (Number Of Days Into A Mars Year)"
 yaxis_title = "Temperature (Degrees Celsius)"
-
-min_temp_size = 10
-avg_temp_size = 20
-max_temp_size = 10
 
 line_width = 2
 line_colour = "black"
 
-def plot_temperatures(sols, temp, colour, line_size, name):
-	return go.Scatter(x=sols,y=temp,mode="markers",
-		showlegend=True,marker=dict(color=colour,size=line_size),
-		name=name)
-
 temp_set = get_df(atmospheric_temp_df_key)
-
-mins = temp_set[min_key]
-maxs = temp_set[max_key]
-avgs = temp_set[avg_key]
 
 sols = get_df(sols_df_key)["days_into_year"]
 
 temp_graph = go.Figure()
 
-plot_min = plot_temperatures(sols, mins, min_temp_colour, min_temp_size, min_temp_title)
-temp_graph.add_trace(plot_min)
+def add_connection_lines(graph, data, xaxis_key, min_key, max_key, line_colour, line_width):
+	for i,row in data.iterrows():
+		graph.add_shape(
+			dict(
+				type="line",
+				x0=row[xaxis_key],
+				x1=row[xaxis_key],
+				y0=row[min_key],
+				y1=row[max_key],
+				line=dict(
+					color=line_colour,
+					width=line_width)
+				),
+			layer="below"
+			)
 
-plot_avg = plot_temperatures(sols, avgs, avg_temp_colour, avg_temp_size, avg_temp_title)
-temp_graph.add_trace(plot_avg)
-
-plot_max = plot_temperatures(sols, maxs, max_temp_colour, max_temp_size, max_temp_title)
-temp_graph.add_trace(plot_max)
-
-for i,row in temp_set.iterrows():
-	temp_graph.add_shape(
-		dict(
-			type="line",
-			x0=row[sol_key],
-			x1=row[sol_key],
-			y0=row[min_key],
-			y1=row[max_key],
-			line=dict(
-				color=line_colour,
-				width=line_width)
-			),
-		layer="below"
-		)
-
-temp_graph.update_layout(title=temp_graph_title, 
+def update_graph(graph, title, x_title, y_title):
+	graph.update_layout(
+	title=title, 
+	xaxis_title=x_title,
+	yaxis_title=y_title,
 	xaxis_showgrid=False, 
 	yaxis_showgrid=False,
-	xaxis_title=xaxis_title,
-	yaxis_title=yaxis_title,
 	xaxis_type="category")
 
-temp_graph.show()
+def plot_points(xaxis, properties):
 
-"""
-pressure_set = get_df("PRESSURE")
+	data = properties["data"]
+	colour = properties["colour"]
+	size = properties["size"]
+	name = properties["name"]
 
-x = pressure_set["sol_id"]
-y = pressure_set["av"]
+	return go.Scatter(x=xaxis,y=data,mode="markers",
+		showlegend=True,marker=dict(color=colour,size=size),
+		name=name)
 
-fig = px.bar(x=x,y=y, labels={ 'x' : "Sol", 'y' : "Pressure" }, range_y=[745,755])
-fig.show()
-"""
+def plot_min_max_avg_graph(graph, x_axis, min_properties, avg_properties, max_properties):
+	plot_min = plot_points(x_axis, min_properties)
+	graph.add_trace(plot_min)
 
-"""
-wspeed_set = get_df("WSPEED")
+	plot_avg = plot_points(x_axis, avg_properties)
+	graph.add_trace(plot_avg)
 
-x = wspeed_set["sol_id"]
-y = wspeed_set["av"]
+	plot_max = plot_points(x_axis, max_properties)
+	graph.add_trace(plot_max)
 
-fig = px.bar(x=x,y=y, labels={ 'x' : "Sol", 'y' : "Wind Speed" })
-fig.show()
-"""
+min_prop = {
+	"data"   : temp_set[min_key],
+	"colour" : "darkblue",
+	"size"   : 10,
+	"name"  : "Minimum Temperature"
+}
 
-"""
-temp_set = get_df("TEMP")
-pressure_set = get_df("PRESSURE")
+avg_prop = {
+	"data"   : temp_set[avg_key],
+	"colour" : "darkorange",
+	"size"   : 20,
+	"name"  : "Average Temperature"
+}
 
-x = temp_set["av"]
-y = pressure_set["av"]
+max_prop = {
+	"data"   : temp_set[max_key],
+	"colour" : "orangered",
+	"size"   : 10,
+	"name"  : "Maximum Temperature"
+}
 
-fig = px.line(x=x, y=y, title="Temperature Compared With Atmospheric Pressure")
-fig.show()
-"""
+plot_min_max_avg_graph(temp_graph, sols, min_prop, avg_prop, max_prop)
+add_connection_lines(temp_graph, temp_set, sol_key, min_key, max_key, line_colour, line_width)
+update_graph(temp_graph, temp_graph_title, xaxis_title, yaxis_title)
+
+#temp_graph.show()
+
+#Atmospheric Pressure
+atmospheric_pressure_df_key = "PRESSURE"
+
+pressure_graph_title = "Avg-Min-Max Mars Atmospheric Pressure"
+
+xaxis_title = "Sol (Number Of Days Into A Mars Year)"
+yaxis_title = "Pressure (Pascals)"
+
+pressure_set = get_df(atmospheric_pressure_df_key)
+
+sols = get_df(sols_df_key)["days_into_year"]
+
+pressure_graph = go.Figure()
+
+min_prop = {
+	"data"   : pressure_set[min_key],
+	"colour" : "darkblue",
+	"size"   : 10,
+	"name"  : "Minimum Pressure"
+}
+
+avg_prop = {
+	"data"   : pressure_set[avg_key],
+	"colour" : "darkorange",
+	"size"   : 20,
+	"name"  : "Average Pressure"
+}
+
+max_prop = {
+	"data"   : pressure_set[max_key],
+	"colour" : "orangered",
+	"size"   : 10,
+	"name"  : "Maximum Pressure"
+}
+
+plot_min_max_avg_graph(pressure_graph, sols, min_prop, avg_prop, max_prop)
+add_connection_lines(pressure_graph, pressure_set, sol_key, min_key, max_key, line_colour, line_width)
+update_graph(pressure_graph, pressure_graph_title, xaxis_title, yaxis_title)
+
+
+#Wind Speed 
+#Question why are there NO winds picked up by TWINS?
+wspeed_df_key = "WSPEED"
+
+wspeed_graph_title = "Avg-Min-Max Mars Wind Speed"
+
+xaxis_title = "Sol (Number Of Days Into A Mars Year)"
+yaxis_title = "Wind Speed (m/s)"
+
+wspeed_set = get_df(wspeed_df_key)
+
+print wspeed_set
+
+sols = get_df(sols_df_key)["days_into_year"]
+
+wspeed_graph = go.Figure()
+
+min_prop = {
+	"data"   : wspeed_set[min_key],
+	"colour" : "darkblue",
+	"size"   : 10,
+	"name"  : "Minimum Wind Speed"
+}
+
+avg_prop = {
+	"data"   : wspeed_set[avg_key],
+	"colour" : "darkorange",
+	"size"   : 20,
+	"name"  : "Average Wind Speed"
+}
+
+max_prop = {
+	"data"   : wspeed_set[max_key],
+	"colour" : "orangered",
+	"size"   : 10,
+	"name"  : "Maximum Wind Speed"
+}
+
+plot_min_max_avg_graph(wspeed_graph, sols, min_prop, avg_prop, max_prop)
+add_connection_lines(wspeed_graph, wspeed_set, sol_key, min_key, max_key, line_colour, line_width)
+update_graph(wspeed_graph, wspeed_graph_title, xaxis_title, yaxis_title)
+
+wspeed_graph.show()
+
 
 """
 wdir_set = get_df("WIND_DIRECTION")
