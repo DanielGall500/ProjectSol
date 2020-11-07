@@ -7,6 +7,7 @@ import pandas as pd
 import enum
 import requests
 from dash.dependencies import Input,Output
+import dash_bootstrap_components as dbc
 
 #URL & Parameters 
 url = 'https://api.nasa.gov/insight_weather/'
@@ -410,7 +411,20 @@ temp_table = get_tbl_id(Table.Temp)
 at_tmp = get_table(temp_table)
 
 app.layout = html.Div(children=[
-	html.H1(children='Project Sol'),
+	html.H1(children='The Mars InSight Lander',
+		style = {
+		'textAlign' : 'center'
+		}),
+
+	html.H2(children='A Live Data Display',
+		style = {
+		'textAlign' : 'center'
+		}),
+
+	
+	dcc.Interval(id="year_progress",n_intervals=0,interval=669),
+	dbc.Progress(id="progress"),
+
 
 	html.Label('Graph'),
 	dcc.Dropdown(
@@ -469,7 +483,7 @@ def update_figure(option):
 
 	plot_min_max_avg_graph(fig, sols, min_prop, avg_prop, max_prop)
 	add_connection_lines(fig, temp_set, sol_key, min_key, max_key, line_colour, line_width)
-	update_graph(fig, temp_graph_title, xaxis_title, yaxis_title)
+	update_graph(fig, option, xaxis_title, yaxis_title)
 
 	return fig
 
