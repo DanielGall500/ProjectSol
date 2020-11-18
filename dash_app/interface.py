@@ -1,10 +1,12 @@
 from data_collector import DataCollector
 from data_manager import DBManager
+from avg_min_max_graph import AvgMinMaxGraph
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output 
 import plotly.express as px
+import plotly.graph_objects as go 
 
 #URL & Parameters 
 url = 'https://api.nasa.gov/insight_weather/'
@@ -84,14 +86,11 @@ def update_output(input_value):
 def update_bar(table_id):
 	table = db_manager.get_table(table_id)
 
-	prefs = PREF[table_id]
-	mn = prefs['y_min']
-	mx = prefs['y_max']
+	graph_creator = AvgMinMaxGraph()
+	graph = graph_creator.create(table, 
+		"title", "x_title", "y_title")
 
-	fig = px.bar(table, x='sol_id', y='av')
-	fig.update_yaxes(range=[mn,mx])
-
-	return fig
+	return graph
 
 
 if __name__ == '__main__':
