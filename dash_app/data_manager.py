@@ -124,9 +124,7 @@ class DBManager:
 	#Retrieve an entire table from the database
 	def get_table(self, tbl):
 	    db_conn = self.connect_to_db("INSIGHT_DATA")
-	    print (db_conn)
 	    sql_cmd = "SELECT * FROM %s" % (tbl)
-	    print ("Command %s" % (sql_cmd))
 	    df = pd.read_sql(sql_cmd,db_conn)
 	    db_conn.close()
 	    return df
@@ -143,7 +141,7 @@ class DBManager:
 	#Convert Sol ID => Day Of The Year
 	def id_to_sol(self, sol_id):
 	    query = "SELECT days_into_year FROM Sols WHERE sol_id=%s" % (sol_id)
-	    tbl = "Sols"
+	    tbl = "INSIGHT_DATA"
 	    return str(self.query_table(tbl,query)[0][0])
 
 	def structure_sensor_data(self, data, sensor_id, recent_sols):
