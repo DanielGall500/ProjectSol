@@ -38,16 +38,13 @@ class AvgMinMaxGraph:
 	def __init__(self):
 		return None
 
-	def create(self, data, title, x_title, y_title):
+	def create(self, xaxis, yaxis, title, x_title, y_title):
 
 		self.graph = go.Figure()
 
-		sol_key = 'sol_id'
-		sols = [str(x) for x in data[sol_key]]
+		self.__plot_min_max_avg_graph(xaxis, yaxis)
 
-		self.__plot_min_max_avg_graph(sols, data)
-
-		self.__add_connection_lines(data, sol_key)
+		self.__add_connection_lines(yaxis)
 
 		self.__give_titles(title, x_title, y_title)
 
@@ -76,9 +73,8 @@ class AvgMinMaxGraph:
 		xaxis_type="category")
 
 	#Draw lines between the min,average and maximum
-	def __add_connection_lines(self, data, xaxis_key):
+	def __add_connection_lines(self, data):
 		for i,row in data.iterrows():
-			print ("--{},{}".format(i,row[xaxis_key]))
 			self.graph.add_shape(
 				dict(
 					type="line",

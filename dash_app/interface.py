@@ -28,18 +28,21 @@ collector.save_to_json_file(response, json_storage_file)
 db_manager = DBManager(response)
 
 AT_pref = {
-	'y_min': -40,
-	'y_max': -80
+	"title" : "Atmospheric Temperature",
+	"x_title" : "Sol",
+	"y_title" : "Degrees (Celsius)"
 }
 
 PRE_pref = {
-	'y_min' : 700,
-	'y_max' : 800
+	"title" : "Atmospheric Pressure",
+	"x_title" : "Sol",
+	"y_title" : "Pressure (Pascal)"
 }
 
 HWS_pref = {
-	'y_min' : 0,
-	'y_max' : 10
+	"title" : "Wind Speeds",
+	"x_title" : "Sol",
+	"y_title" : "Wind Speed (m/s)"
 }
 
 PREF = {
@@ -86,9 +89,18 @@ def update_output(input_value):
 def update_bar(table_id):
 	table = db_manager.get_table(table_id)
 
+	prefs = PREF[table_id]
+
+	ttl = prefs["title"]
+	x_ttl = prefs["x_title"]
+	y_ttl = prefs["y_title"]
+
+	sols = [db_manager.id_to_sol(x) for x in table.iloc[:,0]]
+	data = table.iloc[:,1:]
+
 	graph_creator = AvgMinMaxGraph()
-	graph = graph_creator.create(table, 
-		"title", "x_title", "y_title")
+	graph = graph_creator.create(
+		sols, data, ttl, x_ttl, y_ttl)
 
 	return graph
 
