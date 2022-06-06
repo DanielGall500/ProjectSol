@@ -26,8 +26,9 @@ Together, these tools will allow us to shape a fascinating picture of the Mars' 
 ### 3. Versions & Libraries Used
 I used **python 2** for this project and suggest that you use it to run all code provided.
 
-There are two libraries (aside from the usual numpy, pandas, etc) that you may need to download for this project to work:
+There are three libraries (aside from the usual numpy, pandas, etc) that you may need to download for this project to work:
 * [requests](https://requests.readthedocs.io/en/master/)
 * [plotly](https://plotly.com/python/getting-started/)
+* [SQLite](https://www.sqlite.org/index.html)
 
 These are essential to ensure that my data retrieval and display process works correctly. If there are any problems with the code it may stem from these. Please don't hesitate to contact me!
