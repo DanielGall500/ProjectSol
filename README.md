@@ -23,6 +23,8 @@ These sensors include:
 
 Together, these tools will allow us to shape a fascinating picture of the Mars' climate and how it relates to our own.
 
+![Database Schema](src/images/db_structure.png)
+
 ### 3. Versions & Libraries Used
 I used **python 2** for this project and suggest that you use it to run all code provided.
 
